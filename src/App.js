@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import React, { useState, useEffect } from 'react';
 import { Client } from "@gradio/client";
 import { ethers } from "ethers";
@@ -55,19 +56,24 @@ function App() {
     if (storedConsent) setConsentStatus(storedConsent);
 
     const initSystem = async () => {
+      // 🟢 1. Handle the Session ID (For Research Tracking)
+      let sessionKey = localStorage.getItem("pureconvo_session_id");
+      if (!sessionKey) {
+        sessionKey = `user_${uuidv4().split('-')[0]}_${Date.now().toString().slice(-4)}`;
+        localStorage.setItem("pureconvo_session_id", sessionKey);
+      }
+      // We will store this in a new state or repurpose userKey
+      setUserKey(sessionKey); 
+
+      // 🔵 2. Handle the Wallet (For Blockchain/PureChain)
       let storedKey = localStorage.getItem("pureconvo_burner_key");
       let wallet = storedKey ? new ethers.Wallet(storedKey) : ethers.Wallet.createRandom();
       if (!storedKey) localStorage.setItem("pureconvo_burner_key", wallet.privateKey);
       
-      setUserKey(wallet.privateKey);
       setAddress(wallet.address);
       setXP(parseInt(localStorage.getItem("pureconvo_xp") || "0"));
 
-      try {
-        const client = await Client.connect(SPACE_URL);
-        const result = await client.predict("/get_dialects", []);
-        if (result.data && Array.isArray(result.data[0])) setAvailableDialects(result.data[0]); 
-      } catch (e) { console.log("Connecting to Brain..."); }
+      // ... keep the rest of your try/catch for dialects ...
     };
 
     initSystem();
@@ -128,7 +134,16 @@ function App() {
       const client = await Client.connect(SPACE_URL);
       
       await client.predict("/check_and_submit_logic", [
-        transcribedText, "+ Add New Dialect", selectedDialect, selectedClarification, selectedTone, missionState.ctx, "", userKey, audioBlob, false 
+        transcribedText,      // orig
+        "+ Add New Dialect",  // d_drop (we force "Add New" for public users)
+        selectedDialect,      // d_new
+        selectedClarification,// clar_raw
+        selectedTone,         // tone
+        missionState.ctx,     // context
+        "React Submission",   // prag
+        userKey,              // 🔑 user_key (The 8th Argument!)
+        audioBlob,            // audio_blob
+        false                 // confirm_new_dialect
       ]);
 
       setXP(prev => prev + 50);
