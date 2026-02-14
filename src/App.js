@@ -11,6 +11,7 @@ const TONES = ["Neutral / Conversational", "Casual / Slang", "Formal / Professio
 
 function App() {
   // --- 1. STATE ---
+  const [isPulsing, setIsPulsing] = useState(false);
   const [userKey, setUserKey] = useState(null);
   const [address, setAddress] = useState("");
   const [xp, setXP] = useState(0);
@@ -168,6 +169,11 @@ function App() {
   const copyIDToClipboard = () => {
     if (userKey) {
       navigator.clipboard.writeText(userKey);
+      
+      // 🟢 Trigger the animation
+      setIsPulsing(true);
+      setTimeout(() => setIsPulsing(false), 600); // Matches the CSS duration
+      
       setStatus("📋 ID COPIED!");
       setTimeout(() => setStatus("IDLE"), 2000);
     }
@@ -278,4 +284,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;
